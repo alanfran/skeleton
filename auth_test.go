@@ -6,12 +6,16 @@ import (
 	"gopkg.in/pg.v4"
 )
 
+type MockAuthStore struct {
+	Mem map[string]Auth
+}
+
 func init() {
 	if db == nil {
 		db = pg.Connect(&pg.Options{
-			User:     "postgres",
-			Password: "postgres",
-			Database: "postgres",
+			User:     dbUser,
+			Password: dbPassword,
+			Database: dbDatabase,
 		})
 		// verify connection
 		_, err := db.Exec(`SELECT 1`)

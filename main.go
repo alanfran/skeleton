@@ -27,9 +27,9 @@ var (
 
 	cookieStore sessions.CookieStore
 
-	SessionCookieName = "session"
-	CookieSecret      = "Secret Used To Authenticate Cookies"
-	CsrfSecret        = "Insert Secret Here"
+	sessionCookieName = "session"
+	cookieSecret      = "Secret Used To Authenticate Cookies"
+	csrfSecret        = "Insert Secret Here"
 
 	dbUser     = "postgres"
 	dbPassword = "postgres"
@@ -54,7 +54,7 @@ func main() {
 	users = NewUserStore(db, mailer)
 	blog = NewBlogStore(db)
 
-	cookieStore = sessions.NewCookieStore([]byte(CookieSecret))
+	cookieStore = sessions.NewCookieStore([]byte(cookieSecret))
 
 	// routes
 	r := initRoutes()
@@ -62,7 +62,7 @@ func main() {
 	r.LoadHTMLGlob("views/*")
 
 	// global middleware
-	r.Use(sessions.Sessions(SessionCookieName, cookieStore))
+	r.Use(sessions.Sessions(sessionCookieName, cookieStore))
 	if gin.Mode() == gin.ReleaseMode {
 		fmt.Println("Using secure middleware.")
 		r.Use(secureOptions())

@@ -46,7 +46,7 @@ func authProtect(c *gin.Context) {
 
 func csrfProtect() gin.HandlerFunc {
 	return csrf.Middleware(csrf.Options{
-		Secret: CsrfSecret,
+		Secret: csrfSecret,
 		ErrorFunc: func(c *gin.Context) {
 			c.String(400, "CSRF token mismatch.")
 			c.Abort()

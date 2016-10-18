@@ -6,6 +6,7 @@ import (
 )
 
 var (
+	// AuthKey is the name of the Auth cookie.
 	AuthKey = "auth"
 )
 
