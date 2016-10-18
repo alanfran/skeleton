@@ -26,8 +26,9 @@ type User struct {
 	Email          string
 	Password       string
 
+  Admin          bool
+
   Created        time.Time
-  // email confirmed
 	Confirmed      bool
 
   // login lock
@@ -54,31 +55,32 @@ type UserStore struct {
 
 func NewUserStore(database *pg.DB, mailer *Mailer) *UserStore {
   // initialize database
-  _, err := database.Exec(`DROP TABLE users; CREATE TABLE IF NOT EXISTS users (
-    id serial PRIMARY KEY,
-    name text NOT NULL,
-    email text NOT NULL,
-    password text NOT NULL,
-    created timestamp NOT NULL,
-    confirmed boolean NOT NULL,
-    attempt_number bigint,
-    attempt_time timestamp,
-    locked timestamp )`)
+  _, err := database.Exec(`CREATE TABLE IF NOT EXISTS users (
+    id               serial PRIMARY KEY,
+    name             text NOT NULL,
+    email            text NOT NULL,
+    password         text NOT NULL,
+    admin            boolean,
+    created          timestamp NOT NULL,
+    confirmed        boolean NOT NULL,
+    attempt_number   bigint,
+    attempt_time     timestamp,
+    locked           timestamp )`)
   if err != nil {
     panic("Error initializing user table.")
   }
 
   _, err = database.Exec(`CREATE TABLE IF NOT EXISTS confirm_tokens(
-    user_id   int  UNIQUE NOT NULL,
-    token text UNIQUE NOT NULL )`)
+    user_id   int   UNIQUE NOT NULL REFERENCES users (id),
+    token     text  PRIMARY KEY )`)
   if err != nil {
     panic("Error initializing confirmation token table.")
   }
 
   _, err = database.Exec(`CREATE TABLE IF NOT EXISTS recover_tokens(
-    user_id     int  UNIQUE NOT NULL,
-    token   text UNIQUE NOT NULL,
-    expires timestamp   NOT NULL )`)
+    user_id   int         UNIQUE NOT NULL REFERENCES users (id),
+    token     text        PRIMARY KEY,
+    expires   timestamp   NOT NULL )`)
   if err != nil {
     panic("Error initializing recovery token table.")
   }
@@ -173,19 +175,18 @@ func (s UserStore) Del(id int) error {
   return err
 }
 
-func (s UserStore) Validate(name, pass string) error {
+func (s UserStore) Validate(name, pass string) (User, error) {
   u, err := s.GetByName(name)
   if err != nil {
-    return err
+    return u, err
   }
   err = bcrypt.CompareHashAndPassword([]byte(u.Password), []byte(pass))
   if err != nil {
     // insert login rate limit
-
-    return err
+    return u, errors.New("Incorrect password.")
   }
 
-  return err
+  return u, err
 }
 
 func (s UserStore) ConfirmUser(token string) error {
@@ -195,21 +196,19 @@ func (s UserStore) ConfirmUser(token string) error {
 
   err := s.db.Model(&ct).Where("token = ?", token).Select()
   if err != nil {
-    //fmt.Println("Token not found.")
-    return err
+    return errors.New("Invalid confirmation token.")
   }
 
   u, err = s.Get(ct.UserID)
   if err != nil {
-    //fmt.Println("User not found.")
-    return err
+    return errors.New("User with matching confirmation token not found.")
   }
 
   // set confirmed
   u.Confirmed = true
   _, err = s.db.Model(&u).Column("confirmed").Update()
   if err != nil {
-    return err
+    return errors.New("Error confirming user.")
   }
 
   // delete token
@@ -239,25 +238,23 @@ func (s UserStore) RecoverUser(token string) (User, error) {
 
   err := s.db.Model(&rt).Where("token = ?", token).Select()
   if err != nil {
-    return u, err
+    return u, errors.New("Invalid recover token.")
   }
 
   if rt.Expires.Before(time.Now()) {
-    _, err = s.db.Model(&rt).Where("token = ?", token).Delete()
-    if err != nil {
-      return u, err
-    }
+    s.db.Model(&rt).Where("token = ?", token).Delete()
+
     return u, errors.New("The recover token has expired.")
   }
 
   u, err = s.Get(rt.UserID)
   if err != nil {
-    return u, err
+    return u, errors.New("User not found.")
   }
 
   _, err = s.db.Model(&rt).Where("token = ?", token).Delete()
   if err != nil {
-    return u, err
+    return u, errors.New("Error deleting used recover token.")
   }
 
 	return u, err

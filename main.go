@@ -1,70 +1,73 @@
 package main
 
 import (
-  //"net/http"
-  //"html/template"
-  //"encoding/base64"
-  //"os"
-  //"path/filepath"
-  //"time"
-  //"log"
+	//"net/http"
+	//"html/template"
+	//"encoding/base64"
+	//"os"
+	//"path/filepath"
+	//"time"
+	//"log"
 
-  "github.com/gin-gonic/gin"
-  "github.com/gin-gonic/contrib/sessions"
-  "github.com/utrack/gin-csrf"
+	"fmt"
 
-  "gopkg.in/pg.v4"
+	"github.com/gin-gonic/contrib/sessions"
+	"github.com/gin-gonic/gin"
+
+	"gopkg.in/pg.v4"
 )
 
 var (
-  db *pg.DB
+	db *pg.DB
 
-  blog *BlogStore
-  users *UserStore
-  auth *AuthStore
-  mailer *Mailer
+	blog   *BlogStore
+	users  *UserStore
+	auth   *AuthStore
+	mailer *Mailer
 
-  cookieStore sessions.CookieStore
+	cookieStore sessions.CookieStore
 
-  CookieSecret = "Secret Used To Authenticate Cookies"
-  CsrfSecret = "Insert Secret Here"
+	SessionCookieName = "session"
+	CookieSecret      = "Secret Used To Authenticate Cookies"
+	CsrfSecret        = "Insert Secret Here"
+
+	dbUser     = "postgres"
+	dbPassword = "postgres"
+	dbDatabase = "postgres"
 )
 
 func main() {
-  r := initRoutes()
+	// connect to DB
+	db = pg.Connect(&pg.Options{
+		User:     dbUser,
+		Password: dbPassword,
+		Database: dbDatabase,
+	})
+	// verify connection
+	_, err := db.Exec(`SELECT 1`)
+	if err != nil {
+		panic("Error connecting to the database.")
+	}
 
-  r.LoadHTMLGlob("views/*")
+	// init data stores
+	mailer = NewMailer()
+	users = NewUserStore(db, mailer)
+	blog = NewBlogStore(db)
 
-  // connect to DB
-  db := pg.Connect(&pg.Options{
-    User: "postgres",
-    Password: "postgres",
-    Database: "postgres",
-  })
-  // verify connection
-  _, err := db.Exec(`SELECT 1`)
-  if err != nil {
-    panic("Error connecting to the database.")
-  }
+	cookieStore = sessions.NewCookieStore([]byte(CookieSecret))
 
-  // init data stores
-  mailer = NewMailer()
-  users = NewUserStore(db, mailer)
-  blog = NewBlogStore(db)
+	// routes
+	r := initRoutes()
 
-  cookieStore = sessions.NewCookieStore([]byte(CookieSecret))
+	r.LoadHTMLGlob("views/*")
 
-  // middleware
-  r.Use(sessions.Sessions("session", cookieStore))
-  r.Use(csrf.Middleware(csrf.Options{
-        Secret: CsrfSecret,
-        ErrorFunc: func(c *gin.Context){
-            c.String(400, "CSRF token mismatch")
-            c.Abort()
-        },
-    }))
-  r.Use(secureOptions())
+	// global middleware
+	r.Use(sessions.Sessions(SessionCookieName, cookieStore))
+	if gin.Mode() == gin.ReleaseMode {
+		fmt.Println("Using secure middleware.")
+		r.Use(secureOptions())
+	}
 
-  // run TLS
-  r.Run(":8080")
+	// run TLS
+	r.Run(":8080")
 }

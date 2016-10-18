@@ -77,10 +77,10 @@ func (s AuthStore) Del(key string) error {
   var auth Auth
   _, err := s.db.Model(&auth).Where("key = ?", key).Delete()
   if err != nil {
-    return err
+    return errors.New("Error deleting session.")
   }
 
-  return nil
+  return err
 }
 
 func GenerateAuthKey() (string, error) {
