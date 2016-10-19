@@ -30,32 +30,36 @@ func secureOptions() gin.HandlerFunc {
 	})
 }
 
-func authProtect(c *gin.Context) {
+func setAuth(c *gin.Context) {
 	// read cookie
 	s := sessions.Default(c)
 	key := s.Get(AuthKey).(string)
 	// look up session in db
 	a, err := auth.Get(key)
 	if err != nil {
-		c.AbortWithError(403, errors.New("You are not logged in."))
+		c.Next()
+		return
 	}
 	// set key in context
 	c.Set(AuthKey, key)
 
-	// is admin
-	u, _ := users.Get(a.UserID)
+	u, err := users.Get(a.UserID)
+	if err != nil {
+		c.Next()
+		return
+	}
+
 	c.Set("user", u)
+
 	c.Next()
 }
 
-func getAuthed(c *gin.Context) bool {
-	s := sessions.Default(c)
-	key := s.Get(AuthKey).(string)
-	_, err := auth.Get(key)
-	if err != nil {
-		return false
+func authProtect(c *gin.Context) {
+	_, exists := c.Get(AuthKey)
+	if !exists {
+		c.AbortWithError(403, errors.New("You are not logged in."))
 	}
-	return true
+	c.Next()
 }
 
 func csrfProtect() gin.HandlerFunc {
@@ -66,4 +70,35 @@ func csrfProtect() gin.HandlerFunc {
 			c.Abort()
 		},
 	})
+}
+
+// Helper Functions for building template data
+func isAdmin(c *gin.Context) bool {
+	u, exists := c.Get("user")
+	if !exists {
+		return false
+	}
+
+	usr := u.(User)
+	if !usr.Admin {
+		return false
+	}
+
+	return true
+}
+
+func isAuthed(c *gin.Context) bool {
+	_, exists := c.Get(AuthKey)
+	if !exists {
+		return false
+	}
+	return true
+}
+
+func buildData(c *gin.Context) gin.H {
+	return gin.H{
+		"Auth":  isAuthed(c),
+		"Admin": isAdmin(c),
+		"_csrf": csrf.GetToken(c),
+	}
 }

@@ -5,7 +5,6 @@ import (
 	"strconv"
 
 	"github.com/gin-gonic/gin"
-	csrf "github.com/utrack/gin-csrf"
 )
 
 func blogHomeH(c *gin.Context) {
@@ -16,10 +15,12 @@ func blogHomeH(c *gin.Context) {
 		return
 	}
 
-	c.HTML(200, "blog", gin.H{
-		"_csrf": csrf.GetToken(c),
-		"Posts": posts,
-	})
+	data := buildData(c)
+	data["Posts"] = posts
+	data["older"] = false
+	data["newer"] = false
+
+	c.HTML(200, "blog", data)
 }
 
 func getBlogH(c *gin.Context) {
@@ -42,10 +43,13 @@ func postBlogH(c *gin.Context) {
 
 	var b BlogPost
 	err := c.Bind(&b)
+
 	if err != nil {
 		c.String(500, "Error saving post.")
 		return
 	}
+
+	b.Author = u.ID
 	blog.CreatePost(b)
 }
 

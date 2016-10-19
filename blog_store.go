@@ -14,6 +14,7 @@ type BlogPost struct {
 	Title      string
 	Body       string
 	Date       time.Time
+	DateString string `sql:"-"`
 }
 
 // BlogStore contains a reference to the database and provides CRUD methods.
@@ -36,6 +37,7 @@ func NewBlogStore(db *pg.DB) *BlogStore {
 func (s BlogStore) GetPost(id int) (BlogPost, error) {
 	var p BlogPost
 	p.ID = id
+	p.Date = time.Now()
 
 	err := s.db.Select(&p)
 
@@ -47,9 +49,10 @@ func (s BlogStore) GetRecentPosts(limit int) ([]BlogPost, error) {
 	var posts []BlogPost
 	err := s.db.Model(&posts).Order("id DESC").Limit(limit).Select()
 
-	for _, p := range posts {
+	for k, p := range posts {
 		u, _ := users.Get(p.Author)
-		p.AuthorName = u.Name
+		posts[k].AuthorName = u.Name
+		posts[k].DateString = p.Date.Format("Jan 2, 2006 at 15:04")
 	}
 
 	return posts, err
@@ -65,8 +68,8 @@ func (s BlogStore) GetPostRange(begin, len int) ([]BlogPost, error) {
 
 // CreatePost inserts the provided post into the database.
 func (s BlogStore) CreatePost(b BlogPost) (BlogPost, error) {
-	b.Date = time.Now()
 
+	b.Date = time.Now()
 	err := s.db.Create(&b)
 
 	return b, err

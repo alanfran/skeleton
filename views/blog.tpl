@@ -15,14 +15,20 @@
            {{range .Posts}}
            <div class="blog-post">
              <h2 class="blog-post-title">{{.Title}}</h2>
-             <p class="blog-post-meta">{{.Date}} by <a href="#">{{.AuthorName}}</a></p>
+             {{if $.Admin}}
+             <div class="pull-md-right">
+              <button class="btn btn-sm btn-info">Edit</button>
+              <button class="btn btn-sm btn-danger">Delete</button>
+             </div>
+             {{end}}
+             <p class="blog-post-meta">{{.DateString}} by <a href="#">{{.AuthorName}}</a></p>
              {{.Body}}
            </div><!-- /.blog-post -->
           {{end}}
 
            <nav class="blog-pagination">
-             <a class="btn btn-outline-primary" href="#">Older</a>
-             <a class="btn btn-outline-secondary disabled" href="#">Newer</a>
+             <a class="btn btn-outline-{{if .older}}{{else}}secondary disabled{{end}}" href="#">Older</a>
+             <a class="btn btn-outline-{{if .newer}}primary{{else}}secondary disabled{{end}}" href="#">Newer</a>
            </nav>
 
          </div><!-- /.blog-main -->
@@ -47,17 +53,48 @@
 
      </div><!-- /.container -->
 
+     {{ if .Admin }}
      <footer class="blog-footer">
-       <p>Blog template built for <a href="http://getbootstrap.com">Bootstrap</a> by <a href="https://twitter.com/mdo">@mdo</a>.</p>
-       <p>
-         <a href="#">Back to top</a>
-       </p>
+       <h3>New Post</h3>
+       <br>
+       <form id="blogForm" method="post" action="/api/blog">
+       <div class="form-group">
+          <p><input id="postTitle" type="text" name="Title" class="form-control" placeholder="Title"></p>
+          <p><textarea id="postBody" rows=5 name="Body" class="form-control" placeholder="Body text goes here."></textarea></p>
+       </div>
+       <button type="submit" class="btn btn-primary">Submit</button>
+     </form>
      </footer>
-
+     {{ end }}
   {{ template "footer" .}}
   <script>
   $(function() {
-    $('#news').addClass('active');
+    $('#news').addClass("active");
+
+    var blogForm = $('#blogForm');
+
+    {{ if .Admin }}
+    blogForm.submit(function(event){
+      event.preventDefault();
+      $("#blogMsg").remove();
+      $.ajax({
+          type: "POST",
+          url: '/api/blog',
+          data: {
+          Title: $("#postTitle").val(),
+          Body: $("#postBody").val(),
+          _csrf: "{{._csrf}}"
+          },
+          success: function(data) {
+            location.reload(true);
+          },
+          error: function(r) {
+            $("#blogForm").append("<div id='blogMsg' class='alert-danger'>" + r.responseText + "</div>");
+          }
+
+      });
+    });
+    {{end}}
   })
   </script>
 {{end}}
