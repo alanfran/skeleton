@@ -15,7 +15,7 @@ func init() {
 		db = pg.Connect(&pg.Options{
 			User:     dbUser,
 			Password: dbPassword,
-			Database: dbDatabase,
+			Database: dbTestDatabase,
 		})
 		// verify connection
 		_, err := db.Exec(`SELECT 1`)

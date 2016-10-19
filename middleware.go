@@ -33,15 +33,29 @@ func secureOptions() gin.HandlerFunc {
 func authProtect(c *gin.Context) {
 	// read cookie
 	s := sessions.Default(c)
-	key := s.Get(AuthKey)
+	key := s.Get(AuthKey).(string)
 	// look up session in db
-	_, err := auth.Get(key.(string))
+	a, err := auth.Get(key)
 	if err != nil {
 		c.AbortWithError(403, errors.New("You are not logged in."))
 	}
 	// set key in context
 	c.Set(AuthKey, key)
+
+	// is admin
+	u, _ := users.Get(a.UserID)
+	c.Set("user", u)
 	c.Next()
+}
+
+func getAuthed(c *gin.Context) bool {
+	s := sessions.Default(c)
+	key := s.Get(AuthKey).(string)
+	_, err := auth.Get(key)
+	if err != nil {
+		return false
+	}
+	return true
 }
 
 func csrfProtect() gin.HandlerFunc {

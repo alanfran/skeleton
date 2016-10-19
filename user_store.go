@@ -4,6 +4,7 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 	"errors"
+	"fmt"
 	"strings"
 	"time"
 
@@ -59,7 +60,7 @@ type UserStore struct {
 // Then it returns an initialized UserStore.
 func NewUserStore(database *pg.DB, mailer *Mailer) *UserStore {
 	// initialize database
-	_, err := database.Exec(`DROP TABLE users; CREATE TABLE IF NOT EXISTS users (
+	_, err := database.Exec(`CREATE TABLE IF NOT EXISTS users (
     id               serial PRIMARY KEY,
     name             text NOT NULL,
     email            text NOT NULL,
@@ -102,6 +103,7 @@ func (s UserStore) Create(u User) (User, error) {
 	}
 
 	// email address exists and is unique
+	fmt.Println(u.Email)
 	if !(strings.Contains(u.Email, "@") && strings.Contains(u.Email, ".")) {
 		return u, errors.New("Please enter a valid email address.")
 	}

@@ -1,38 +1,54 @@
 package main
 
 import (
-  "github.com/gin-gonic/gin"
+	"fmt"
+
+	"github.com/gin-gonic/contrib/sessions"
+	"github.com/gin-gonic/gin"
+	csrf "github.com/utrack/gin-csrf"
 )
 
 func initRoutes() *gin.Engine {
-  // logging + Recovery
-  r := gin.Default()
+	// logging + Recovery
+	r := gin.Default()
 
-  r.RedirectTrailingSlash = true
+	r.RedirectTrailingSlash = true
 
-  r.GET("/", func(c *gin.Context) {
-    c.String(200, "Ok.")
-  })
+	// global middleware
+	r.Use(sessions.Sessions(sessionCookieName, cookieStore))
+	if gin.Mode() == gin.ReleaseMode {
+		fmt.Println("Using secure middleware.")
+		r.Use(secureOptions())
+	}
+	r.Use(csrfProtect())
 
-  // blog home page
-  r.GET("/api/blog", blogHomeH)
+	r.GET("/", func(c *gin.Context) {
+		c.HTML(200, "index", gin.H{
+			"_csrf": csrf.GetToken(c),
+			"Auth":  getAuthed(c),
+		})
+	})
+	r.Static("/static", "static")
 
-  // blog endpoints
-  r.GET("/api/blog/:id", getBlogH)
-  r.POST("/api/blog", postBlogH)
-  r.PUT("/api/blog/:id", putBlogH)
-  r.DELETE("/api/blog/:id", deleteBlogH)
+	r.GET("/blog", blogHomeH)
 
-  // user endpoints
-  r.POST("/api/register", registerH)
+	// blog endpoints
+	r.GET("/api/blog/:id", getBlogH)
+	r.POST("/api/blog", postBlogH)
+	r.PUT("/api/blog/:id", putBlogH)
+	r.DELETE("/api/blog/:id", deleteBlogH)
 
-  // session endpoints
-  // csrf
-  r.POST("/api/login", loginH)
+	// user endpoints
+	r.POST("/api/register", registerH)
+	r.GET("/api/confirm", confirmH)
 
-  a := r.Group("/", authProtect)
-  // csrf
-  a.POST("/api/logout", logoutH)
+	// session endpoints
+	r.POST("/api/login", loginH)
 
-  return r
+	// must be logged in
+	a := r.Group("/", authProtect)
+
+	a.POST("/api/logout", logoutH)
+
+	return r
 }

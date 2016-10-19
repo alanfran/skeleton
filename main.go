@@ -9,10 +9,7 @@ import (
 	//"time"
 	//"log"
 
-	"fmt"
-
 	"github.com/gin-gonic/contrib/sessions"
-	"github.com/gin-gonic/gin"
 
 	"gopkg.in/pg.v4"
 )
@@ -31,9 +28,10 @@ var (
 	cookieSecret      = "Secret Used To Authenticate Cookies"
 	csrfSecret        = "Insert Secret Here"
 
-	dbUser     = "postgres"
-	dbPassword = "postgres"
-	dbDatabase = "postgres"
+	dbUser         = "postgres"
+	dbPassword     = "postgres"
+	dbDatabase     = "postgres"
+	dbTestDatabase = "test"
 )
 
 func main() {
@@ -52,6 +50,7 @@ func main() {
 	// init data stores
 	mailer = NewMailer()
 	users = NewUserStore(db, mailer)
+	auth = NewAuthStore(db)
 	blog = NewBlogStore(db)
 
 	cookieStore = sessions.NewCookieStore([]byte(cookieSecret))
@@ -60,13 +59,6 @@ func main() {
 	r := initRoutes()
 
 	r.LoadHTMLGlob("views/*")
-
-	// global middleware
-	r.Use(sessions.Sessions(sessionCookieName, cookieStore))
-	if gin.Mode() == gin.ReleaseMode {
-		fmt.Println("Using secure middleware.")
-		r.Use(secureOptions())
-	}
 
 	// run TLS
 	r.Run(":8080")

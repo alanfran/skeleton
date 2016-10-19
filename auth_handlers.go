@@ -35,7 +35,7 @@ func loginH(c *gin.Context) {
 	session.Save()
 
 	// redirect
-	c.Redirect(303, "/")
+	c.String(200, "Success.")
 }
 
 // authProtect middleware ensures user is logged in

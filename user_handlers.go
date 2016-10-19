@@ -15,8 +15,7 @@ func registerH(c *gin.Context) {
 		return
 	}
 
-	//c.String(200, "User "+ u.Name +" registered.")
-	c.Redirect(303, "/")
+	c.String(200, "User "+u.Name+" registered.")
 }
 
 func confirmH(c *gin.Context) {

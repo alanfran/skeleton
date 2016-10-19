@@ -12,7 +12,7 @@ func init() {
 		db = pg.Connect(&pg.Options{
 			User:     dbUser,
 			Password: dbPassword,
-			Database: dbDatabase,
+			Database: dbTestDatabase,
 		})
 		// verify connection
 		_, err := db.Exec(`SELECT 1`)
@@ -110,17 +110,13 @@ func TestRecoverUser(t *testing.T) {
 		t.Error(err)
 	}
 
+	var confirm ConfirmToken
+	_, _ = users.db.Model(&confirm).Where("user_id = ?", u2.ID).Delete()
+
 	// delete user
 	err = users.Del(u2.ID)
 	if err != nil {
 		t.Error("Error deleting user.")
-		t.Error(err)
-	}
-
-	// make sure the confirm token is also deleted
-	err = users.db.Model(&ConfirmToken{}).Where("user_id = ?", u2.ID).Select()
-	if err == nil {
-		t.Error("Confirm token was not automatically deleted.")
 		t.Error(err)
 	}
 }

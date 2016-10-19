@@ -8,11 +8,12 @@ import (
 
 // BlogPost stores a blog post.
 type BlogPost struct {
-	ID     int
-	Author int
-	Title  string
-	Body   string
-	Date   time.Time
+	ID         int
+	Author     int
+	AuthorName string `sql:"-"`
+	Title      string
+	Body       string
+	Date       time.Time
 }
 
 // BlogStore contains a reference to the database and provides CRUD methods.
@@ -45,6 +46,11 @@ func (s BlogStore) GetPost(id int) (BlogPost, error) {
 func (s BlogStore) GetRecentPosts(limit int) ([]BlogPost, error) {
 	var posts []BlogPost
 	err := s.db.Model(&posts).Order("id DESC").Limit(limit).Select()
+
+	for _, p := range posts {
+		u, _ := users.Get(p.Author)
+		p.AuthorName = u.Name
+	}
 
 	return posts, err
 }
