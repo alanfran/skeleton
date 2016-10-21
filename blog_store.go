@@ -19,18 +19,27 @@ type BlogPost struct {
 
 // BlogStore contains a reference to the database and provides CRUD methods.
 type BlogStore struct {
-	db *pg.DB
+	db  *pg.DB
+	mem map[int]BlogPost
 }
 
 // NewBlogStore ensures the `blog_posts` table exists in the database and returns an initialized BlogStore.
 func NewBlogStore(db *pg.DB) *BlogStore {
 	// Create Table in db
-	_, err := db.Exec(`CREATE TABLE IF NOT EXISTS blog_posts (id SERIAL, author TEXT, title TEXT, body TEXT, date TIMESTAMP)`)
+	_, err := db.Exec(`CREATE TABLE IF NOT EXISTS blog_posts (
+		id SERIAL PRIMARY KEY,
+		author INT NOT NULL,
+		title TEXT NOT NULL,
+		body TEXT NOT NULL,
+		date TIMESTAMP NOT NULL)`)
 	if err != nil {
 		panic(err)
 	}
 
-	return &BlogStore{db: db}
+	return &BlogStore{
+		db:  db,
+		mem: make(map[int]BlogPost),
+	}
 }
 
 // GetPost returns the blog post with the provided ID, or an error.
@@ -76,8 +85,15 @@ func (s BlogStore) CreatePost(b BlogPost) (BlogPost, error) {
 }
 
 // PutPost updates the provided post in the database.
-func (s BlogStore) PutPost(b BlogPost) error {
-	err := s.db.Update(&b)
+func (s BlogStore) PutPost(updated BlogPost) error {
+	p, err := s.GetPost(updated.ID)
+	if err != nil {
+		return err
+	}
+	p.Title = updated.Title
+	p.Body = updated.Body
+
+	err = s.db.Update(&p)
 
 	return err
 }

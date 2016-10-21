@@ -4,7 +4,6 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 	"errors"
-	"fmt"
 	"strings"
 	"time"
 
@@ -103,7 +102,6 @@ func (s UserStore) Create(u User) (User, error) {
 	}
 
 	// email address exists and is unique
-	fmt.Println(u.Email)
 	if !(strings.Contains(u.Email, "@") && strings.Contains(u.Email, ".")) {
 		return u, errors.New("Please enter a valid email address.")
 	}
@@ -242,6 +240,16 @@ func (s UserStore) NewRecover(uid int) (RecoverToken, error) {
 	rt.UserID = uid
 	rt.Expires = time.Now().AddDate(0, 0, 1)
 	err = s.db.Create(&rt)
+	if err != nil {
+		return rt, errors.New("Error creating recovery token.")
+	}
+
+	u, err := s.Get(uid)
+	if err != nil {
+		return rt, errors.New("Error retrieving email address.")
+	}
+
+	s.mailer.Send(u.Email, "Password Recovery", rt.Token)
 
 	return rt, err
 }

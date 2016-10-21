@@ -105,7 +105,7 @@ func TestGetPostRange(t *testing.T) {
 	}
 
 	// get range
-	postRange, err := blog.GetPostRange(999, 5)
+	postRange, err := blog.GetPostRange(999999, 5)
 	if err != nil {
 		t.Error("Error getting post range.")
 		t.Error(err)

@@ -1,12 +1,6 @@
 package main
 
 import (
-	//"fmt"
-	//"log"
-	//"net/http"
-
-	//"github.com/justinas/nosurf"
-
 	"errors"
 
 	"github.com/gin-gonic/contrib/secure"
@@ -30,10 +24,16 @@ func secureOptions() gin.HandlerFunc {
 	})
 }
 
+// Looks for Auth cookie and adds it and the User to the context.
 func setAuth(c *gin.Context) {
 	// read cookie
 	s := sessions.Default(c)
-	key := s.Get(AuthKey).(string)
+	k := s.Get(AuthKey)
+	if k == nil {
+		c.Next()
+		return
+	}
+	key := k.(string)
 	// look up session in db
 	a, err := auth.Get(key)
 	if err != nil {
@@ -43,6 +43,7 @@ func setAuth(c *gin.Context) {
 	// set key in context
 	c.Set(AuthKey, key)
 
+	// add User to context
 	u, err := users.Get(a.UserID)
 	if err != nil {
 		c.Next()
@@ -55,9 +56,15 @@ func setAuth(c *gin.Context) {
 }
 
 func authProtect(c *gin.Context) {
-	_, exists := c.Get(AuthKey)
-	if !exists {
+	if !isAuthed(c) {
 		c.AbortWithError(403, errors.New("You are not logged in."))
+	}
+	c.Next()
+}
+
+func adminProtect(c *gin.Context) {
+	if !isAdmin(c) {
+		c.AbortWithError(403, errors.New("Permission denied."))
 	}
 	c.Next()
 }

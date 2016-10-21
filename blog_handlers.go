@@ -37,10 +37,6 @@ func postBlogH(c *gin.Context) {
 	user, _ := c.Get("user")
 	u := user.(User)
 
-	if !u.Admin {
-		c.String(500, "You are not authorized to make blog posts.")
-	}
-
 	var b BlogPost
 	err := c.Bind(&b)
 
@@ -57,17 +53,26 @@ func putBlogH(c *gin.Context) {
 	var b BlogPost
 	err := c.Bind(&b)
 	if err != nil {
-		c.String(500, "Error updating post.")
+		c.String(500, err.Error())
 		return
 	}
-	blog.PutPost(b)
+	if b.Title == "" || b.Body == "" {
+		c.String(500, "No data to insert.")
+		return
+	}
+	err = blog.PutPost(b)
+	if err != nil {
+		c.String(500, err.Error())
+	}
+
 }
 
 func deleteBlogH(c *gin.Context) {
 	id, _ := strconv.Atoi(c.Param("id"))
 	err := blog.DelPost(id)
 	if err != nil {
-		c.AbortWithStatus(500)
+		c.String(500, "Error deleting post."+err.Error())
+		fmt.Println(err.Error())
 		return
 	}
 	c.String(200, "Deleted post #"+string(id))

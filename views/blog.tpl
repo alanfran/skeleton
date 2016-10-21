@@ -14,15 +14,17 @@
          <div class="col-sm-8 blog-main">
            {{range .Posts}}
            <div class="blog-post">
-             <h2 class="blog-post-title">{{.Title}}</h2>
+             <h2 id="title-{{.ID}}" class="blog-post-title">{{.Title}}</h2>
              {{if $.Admin}}
              <div class="pull-md-right">
-              <button class="btn btn-sm btn-info">Edit</button>
-              <button class="btn btn-sm btn-danger">Delete</button>
+              <button id='cancel-{{.ID}}' class='btn btn-sm btn-secondary' style="display: none">Cancel</button>
+              <button id='save-{{.ID}}' class='btn btn-sm btn-primary' style="display: none">Save</button>
+              <button id="edit-{{.ID}}" class="btn btn-sm btn-info">Edit</button>
+              <button id="delete-{{.ID}}" class="btn btn-sm btn-danger">Delete</button>
              </div>
              {{end}}
              <p class="blog-post-meta">{{.DateString}} by <a href="#">{{.AuthorName}}</a></p>
-             {{.Body}}
+             <p id="body-{{.ID}}">{{.Body}}</p>
            </div><!-- /.blog-post -->
           {{end}}
 
@@ -60,7 +62,7 @@
        <form id="blogForm" method="post" action="/api/blog">
        <div class="form-group">
           <p><input id="postTitle" type="text" name="Title" class="form-control" placeholder="Title"></p>
-          <p><textarea id="postBody" rows=5 name="Body" class="form-control" placeholder="Body text goes here."></textarea></p>
+          <p><textarea id="postBody" rows=10 name="Body" class="form-control" placeholder="Body text goes here."></textarea></p>
        </div>
        <button type="submit" class="btn btn-primary">Submit</button>
      </form>
@@ -94,6 +96,79 @@
 
       });
     });
+
+    {{range .Posts}}
+      // delete .ID
+      var del = $('#delete-{{.ID}}')
+      del.click(function(event) {
+        $.ajax({
+          type: "DELETE",
+          url: '/api/blog/{{.ID}}?_csrf={{$._csrf}}',
+          success: function(r) {
+            location.reload(true);
+          },
+          error: function(r) {
+            alert(r.responseText)
+          }
+        });
+      })
+      // edit .ID
+      var edit = $('#edit-{{.ID}}')
+      var save = $("#save-{{.ID}}")
+      var cancel = $("#cancel-{{.ID}}")
+
+      save.hide()
+      cancel.hide()
+
+
+
+      edit.click(function(event) {
+        // replace fields with editable form
+        var title = $("#title-{{.ID}}")
+        var body = $("#body-{{.ID}}")
+        var editableTitle = $("<textarea id='edit-title-{{.ID}}' rows=1 class='blog-post-title' />")
+        var editableBody = $("<textarea id='edit-body-{{.ID}}' rows=10 />")
+        editableTitle.val(title.text())
+        editableBody.val(body.text())
+        $('#title-{{.ID}}').replaceWith(editableTitle)
+        $('#body-{{.ID}}').replaceWith(editableBody)
+
+        // replace Edit button with Cancel and Save
+        $('#edit-{{.ID}}').hide()
+        $('#save-{{.ID}}').show()
+        $('#cancel-{{.ID}}').show()
+
+        $('#cancel-{{.ID}}').click(function(event) {
+          editableTitle.replaceWith(title)
+          editableBody.replaceWith(body)
+          $('#edit-{{.ID}}').show()
+          $('#save-{{.ID}}').hide()
+          $('#cancel-{{.ID}}').hide()
+        })
+
+        // Save does ajax PUT w/ csrf
+        $('#save-{{.ID}}').click(function(event) {
+          $.ajax({
+            type: "PUT",
+            url: '/api/blog/{{.ID}}',
+            data: {
+              ID: {{.ID}},
+              Title: $('#edit-title-{{.ID}}').val(),
+              Body: $('#edit-body-{{.ID}}').val(),
+              _csrf: {{$._csrf}}
+            },
+            success: function(r) {
+              location.reload(true);
+            },
+            error: function(r) {
+              alert(r.responseText)
+            }
+          });
+        })
+      })
+
+    {{end}}
+
     {{end}}
   })
   </script>

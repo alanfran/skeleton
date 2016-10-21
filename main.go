@@ -1,14 +1,6 @@
 package main
 
 import (
-	//"net/http"
-	//"html/template"
-	//"encoding/base64"
-	//"os"
-	//"path/filepath"
-	//"time"
-	//"log"
-
 	"github.com/gin-gonic/contrib/sessions"
 
 	"gopkg.in/pg.v4"
@@ -20,6 +12,7 @@ var (
 	blog   *BlogStore
 	users  *UserStore
 	auth   *AuthStore
+	forum  *ForumStore
 	mailer *Mailer
 
 	cookieStore sessions.CookieStore
@@ -32,6 +25,9 @@ var (
 	dbPassword     = "postgres"
 	dbDatabase     = "postgres"
 	dbTestDatabase = "test"
+
+	appName = "pg-skeleton"
+	appURL  = "localhost:8080"
 )
 
 func main() {

@@ -11,8 +11,6 @@ var (
 )
 
 func loginH(c *gin.Context) {
-	// if already logged in, send back error msg
-
 	var u User
 	c.Bind(&u)
 
@@ -22,7 +20,7 @@ func loginH(c *gin.Context) {
 		return
 	}
 
-	// create session
+	// create auth token in database
 	a, err := auth.Create(u.ID, c.ClientIP())
 	if err != nil {
 		c.String(500, "Error creating session.")
@@ -34,7 +32,6 @@ func loginH(c *gin.Context) {
 	session.Set(AuthKey, a.Key)
 	session.Save()
 
-	// redirect
 	c.String(200, "Success.")
 }
 
@@ -47,7 +44,7 @@ func logoutH(c *gin.Context) {
 		return
 	}
 
-	// destroy auth
+	// delete auth from database
 	err := auth.Del(key.(string))
 	if err != nil {
 		c.String(500, err.Error())

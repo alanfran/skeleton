@@ -1,8 +1,6 @@
 package main
 
-import (
-	"fmt"
-)
+import "fmt"
 
 // Mailer sends emails.
 type Mailer struct {
@@ -16,15 +14,17 @@ func NewMailer() *Mailer {
 
 // Send sends an email to `addr`.
 func (m Mailer) Send(addr, subj, body string) error {
+	fmt.Println("[" + addr + "]  " + subj + ": " + body)
 	return errNyi
 }
 
 // SendConfirmation sends a confirmation email.
 func (m Mailer) SendConfirmation(addr, token string) error {
-	subject := `Welcome. Please activate your account.`
-	fmt.Println("Sending mail to: " + addr)
-	fmt.Println("Subject: " + subject)
-	fmt.Println(token)
+	m.Send(
+		addr,
+		"Welcome to "+appName+".",
+		"Please activate your account.\nhttps://"+appURL+"/api/confirm?Token="+token,
+	)
 
 	return nil
 }
