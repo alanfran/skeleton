@@ -12,7 +12,6 @@ var (
 	blog   *BlogStore
 	users  *UserStore
 	auth   *AuthStore
-	forum  *ForumStore
 	mailer *Mailer
 
 	cookieStore sessions.CookieStore

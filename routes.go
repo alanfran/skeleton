@@ -32,12 +32,6 @@ func initRoutes() *gin.Engine {
 
 	r.GET("/blog", blogHomeH)
 
-	r.GET("/board", forumHomeH)
-	r.GET("/board/b/:id", forumBoardH)
-	r.GET("/board/t/:tid", forumThreadH)
-	r.GET("/board/recent", forumRecentH)
-	r.GET("/board/popular", forumPopularH)
-
 	// API
 	authed := r.Group("/", authProtect)
 	admin := authed.Group("/", adminProtect)
@@ -56,23 +50,6 @@ func initRoutes() *gin.Engine {
 	// authentication endpoints
 	r.POST("/api/login", loginH)
 	authed.POST("/api/logout", logoutH)
-
-	// forum endpoints
-	r.GET("/api/boards", getBoardsH)
-	r.GET("/api/board/:id", getThreadsH)
-	r.GET("/api/thread/:id", getPostsH)
-
-	admin.POST("/api/board", postBoardH)
-	authed.POST("/api/board/:id", postThreadH)
-	authed.POST("/api/thread/:id", postPostH)
-
-	admin.PUT("/api/board/:id", putBoardH)
-	authed.PUT("/api/thread/:tid", putThreadH)
-	authed.PUT("/api/post/:id", putPostH)
-
-	admin.DELETE("/api/board/:id", deleteBoardH)
-	authed.DELETE("/api/thread/:id", deleteThreadH)
-	authed.DELETE("/api/post/:id", deletePostH)
 
 	return r
 }
