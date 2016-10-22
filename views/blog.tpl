@@ -22,9 +22,10 @@
               <button id="edit-{{.ID}}" class="btn btn-sm btn-info">Edit</button>
               <button id="delete-{{.ID}}" class="btn btn-sm btn-danger">Delete</button>
              </div>
+             <div id="body-{{.ID}}-md" style="display: none">{{.Body}}</div>
              {{end}}
              <p class="blog-post-meta">{{.DateString}} by <a href="#">{{.AuthorName}}</a></p>
-             <p id="body-{{.ID}}">{{.Body}}</p>
+             <div id="body-{{.ID}}">{{.Body | markdown}}</div>
            </div><!-- /.blog-post -->
           {{end}}
 
@@ -44,9 +45,8 @@
            <div class="sidebar-module">
              <h4>Elsewhere</h4>
              <ol class="list-unstyled">
-               <li><a href="#">GitHub</a></li>
-               <li><a href="#">Twitter</a></li>
-               <li><a href="#">Facebook</a></li>
+               <li><a href="https://github.com/Qxcl">GitHub</a></li>
+               <li><a href="#">LinkedIn</a></li>
              </ol>
            </div>
          </div><!-- /.blog-sidebar -->
@@ -125,7 +125,8 @@
       edit.click(function(event) {
         // replace fields with editable form
         var title = $("#title-{{.ID}}")
-        var body = $("#body-{{.ID}}")
+        var body = $("#body-{{.ID}}-md")
+        var bodyhtml = $("#body-{{.ID}}")
         var editableTitle = $("<textarea id='edit-title-{{.ID}}' rows=1 class='blog-post-title' />")
         var editableBody = $("<textarea id='edit-body-{{.ID}}' rows=10 />")
         editableTitle.val(title.text())
@@ -140,7 +141,7 @@
 
         $('#cancel-{{.ID}}').click(function(event) {
           editableTitle.replaceWith(title)
-          editableBody.replaceWith(body)
+          editableBody.replaceWith(bodyhtml)
           $('#edit-{{.ID}}').show()
           $('#save-{{.ID}}').hide()
           $('#cancel-{{.ID}}').hide()

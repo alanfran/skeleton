@@ -2,9 +2,11 @@ package main
 
 import (
 	"fmt"
+	"html/template"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
+	"github.com/russross/blackfriday"
 )
 
 func blogHomeH(c *gin.Context) {
@@ -76,4 +78,9 @@ func deleteBlogH(c *gin.Context) {
 		return
 	}
 	c.String(200, "Deleted post #"+string(id))
+}
+
+func markdown(args ...interface{}) template.HTML {
+	s := blackfriday.MarkdownCommon([]byte(fmt.Sprintf("%s", args...)))
+	return template.HTML(s)
 }

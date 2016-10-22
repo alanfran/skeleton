@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"html/template"
 
 	"github.com/gin-gonic/contrib/sessions"
 	"github.com/gin-gonic/gin"
@@ -12,6 +13,18 @@ func initRoutes() *gin.Engine {
 	r := gin.Default()
 
 	r.RedirectTrailingSlash = true
+
+	//r.LoadHTMLGlob("views/*")
+
+	var funcMap = template.FuncMap{
+		"markdown": markdown,
+	}
+
+	if tmpl, err := template.New("blog").Funcs(funcMap).ParseGlob("views/*"); err == nil {
+		r.SetHTMLTemplate(tmpl)
+	} else {
+		panic(err)
+	}
 
 	// global middleware
 	r.Use(sessions.Sessions(sessionCookieName, cookieStore))

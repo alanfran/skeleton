@@ -53,8 +53,6 @@ func main() {
 	// routes
 	r := initRoutes()
 
-	r.LoadHTMLGlob("views/*")
-
 	// run TLS
 	r.Run(":8080")
 }
