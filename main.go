@@ -16,20 +16,22 @@ var (
 
 	cookieStore sessions.CookieStore
 
-	sessionCookieName = "session"
-	cookieSecret      = "Secret Used To Authenticate Cookies"
-	csrfSecret        = "Insert Secret Here"
+	sessionCookieName = getSessionCookieName()
+	cookieSecret      = getCookieSecret()
+	csrfSecret        = getCsrfSecret()
 
-	dbUser         = "postgres"
-	dbPassword     = "postgres"
-	dbDatabase     = "postgres"
-	dbTestDatabase = "test"
+	dbUser         = getDbUser()
+	dbPassword     = getDbPass()
+	dbDatabase     = getDbDatabase()
+	dbTestDatabase = getDbTestDatabase()
 
-	appName = "pg-skeleton"
-	appURL  = "localhost:8080"
+	appName = getAppName()
+	appURL  = getAppURL()
 )
 
 func main() {
+	// check environment variables
+
 	// connect to DB
 	db = pg.Connect(&pg.Options{
 		User:     dbUser,

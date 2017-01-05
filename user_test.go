@@ -48,7 +48,7 @@ func TestCreateAndConfirmUser(t *testing.T) {
 	}
 
 	// ensure user is now confirmed
-	u2, err := users.Get(u.ID)
+	u2, _ := users.Get(u.ID)
 	if u2.Confirmed != true {
 		t.Error("User not confirmed.")
 	}
