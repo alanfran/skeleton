@@ -39,6 +39,14 @@ func getCsrfSecret() string {
 	return secret
 }
 
+func getDbAddr() string {
+	addr := os.Getenv("DB_ADDR")
+	if addr == "" {
+		addr = "localhost:5432"
+	}
+	return addr
+}
+
 func getDbUser() string {
 	user := os.Getenv("DB_USER")
 	if user == "" {

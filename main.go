@@ -20,6 +20,7 @@ var (
 	cookieSecret      = getCookieSecret()
 	csrfSecret        = getCsrfSecret()
 
+	dbAddr         = getDbAddr()
 	dbUser         = getDbUser()
 	dbPassword     = getDbPass()
 	dbDatabase     = getDbDatabase()
@@ -30,10 +31,9 @@ var (
 )
 
 func main() {
-	// check environment variables
-
 	// connect to DB
 	db = pg.Connect(&pg.Options{
+		Addr:     dbAddr,
 		User:     dbUser,
 		Password: dbPassword,
 		Database: dbDatabase,

@@ -13,6 +13,7 @@ type MockAuthStore struct {
 func init() {
 	if db == nil {
 		db = pg.Connect(&pg.Options{
+			Addr:     dbAddr,
 			User:     dbUser,
 			Password: dbPassword,
 			Database: dbTestDatabase,

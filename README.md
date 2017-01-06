@@ -18,6 +18,7 @@ Configuration is handled via environment variables in release mode, and with opt
   COOKIE_SECRET       = change this secret used to authenticate cookies
   CSRF_SECRET         = change this csrf secret
 
+  DB_ADDR             = localhost:5432
   DB_USER             = postgres
   DB_PASSWORD         = postgres
   DB_DATABASE         = postgres
@@ -26,5 +27,3 @@ Configuration is handled via environment variables in release mode, and with opt
   APP_NAME            = skeleton
   APP_URL             = localhost:8080
 ```
-
-Code made simple with Gin and go-pg.
