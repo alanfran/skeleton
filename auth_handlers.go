@@ -11,18 +11,18 @@ var (
 	AuthKey = "auth"
 )
 
-func loginH(c *gin.Context) {
+func (app *App) loginH(c *gin.Context) {
 	var u user.User
 	c.Bind(&u)
 
-	u, err := users.Validate(u.Name, u.Password)
+	u, err := app.users.Validate(u.Name, u.Password)
 	if err != nil {
 		c.String(500, "Invalid login credentials.")
 		return
 	}
 
 	// create auth token in database
-	a, err := auths.Create(u.ID, c.ClientIP())
+	a, err := app.auths.Create(u.ID, c.ClientIP())
 	if err != nil {
 		c.String(500, "Error creating session.")
 		return
@@ -37,7 +37,7 @@ func loginH(c *gin.Context) {
 }
 
 // authProtect middleware ensures user is logged in
-func logoutH(c *gin.Context) {
+func (app *App) logoutH(c *gin.Context) {
 	// get auth key
 	key, exists := c.Get(AuthKey)
 	if !exists {
@@ -46,7 +46,7 @@ func logoutH(c *gin.Context) {
 	}
 
 	// delete auth from database
-	err := auths.Del(key.(string))
+	err := app.auths.Del(key.(string))
 	if err != nil {
 		c.String(500, err.Error())
 	}

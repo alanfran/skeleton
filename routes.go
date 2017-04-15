@@ -8,7 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func initRoutes() *gin.Engine {
+func (app *App) initRoutes() *gin.Engine {
 	// logging + Recovery
 	r := gin.Default()
 
@@ -27,14 +27,14 @@ func initRoutes() *gin.Engine {
 	}
 
 	// global middleware
-	r.Use(sessions.Sessions(sessionCookieName, cookieStore))
+	r.Use(sessions.Sessions(app.sessionCookieName, app.cookieStore))
 	if gin.Mode() == gin.ReleaseMode {
 		fmt.Println("Using secure middleware.")
 		r.Use(secureOptions())
 	}
-	r.Use(csrfProtect())
+	r.Use(app.csrfProtect())
 
-	r.Use(setAuth)
+	r.Use(app.setAuth)
 
 	// HTML
 
@@ -43,26 +43,26 @@ func initRoutes() *gin.Engine {
 	})
 	r.Static("/static", "static")
 
-	r.GET("/blog", blogHomeH)
+	r.GET("/blog", app.blogHomeH)
 
 	// API
 	authed := r.Group("/", authProtect)
 	admin := authed.Group("/", adminProtect)
 
 	// blog endpoints
-	r.GET("/api/blog/:id", getBlogH)
-	admin.POST("/api/blog", postBlogH)
-	admin.PUT("/api/blog/:id", putBlogH)
-	admin.DELETE("/api/blog/:id", deleteBlogH)
+	r.GET("/api/blog/:id", app.getBlogH)
+	admin.POST("/api/blog", app.postBlogH)
+	admin.PUT("/api/blog/:id", app.putBlogH)
+	admin.DELETE("/api/blog/:id", app.deleteBlogH)
 
 	// user endpoints
-	r.POST("/api/register", registerH)
-	r.GET("/api/confirm", confirmH)
+	r.POST("/api/register", app.registerH)
+	r.GET("/api/confirm", app.confirmH)
 	//r.GET("/api/recover", recoverH)
 
 	// authentication endpoints
-	r.POST("/api/login", loginH)
-	authed.POST("/api/logout", logoutH)
+	r.POST("/api/login", app.loginH)
+	authed.POST("/api/logout", app.logoutH)
 
 	return r
 }

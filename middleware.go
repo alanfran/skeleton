@@ -27,7 +27,7 @@ func secureOptions() gin.HandlerFunc {
 }
 
 // Looks for Auth cookie and adds it and the User to the context.
-func setAuth(c *gin.Context) {
+func (app *App) setAuth(c *gin.Context) {
 	// read cookie
 	s := sessions.Default(c)
 	k := s.Get(AuthKey)
@@ -37,7 +37,7 @@ func setAuth(c *gin.Context) {
 	}
 	key := k.(string)
 	// look up session in db
-	a, err := auths.Get(key)
+	a, err := app.auths.Get(key)
 	if err != nil {
 		c.Next()
 		return
@@ -46,7 +46,7 @@ func setAuth(c *gin.Context) {
 	c.Set(AuthKey, key)
 
 	// add User to context
-	u, err := users.Get(a.UserID)
+	u, err := app.users.Get(a.UserID)
 	if err != nil {
 		c.Next()
 		return
@@ -71,9 +71,9 @@ func adminProtect(c *gin.Context) {
 	c.Next()
 }
 
-func csrfProtect() gin.HandlerFunc {
+func (app *App) csrfProtect() gin.HandlerFunc {
 	return csrf.Middleware(csrf.Options{
-		Secret: csrfSecret,
+		Secret: app.csrfSecret,
 		ErrorFunc: func(c *gin.Context) {
 			c.String(400, "CSRF token mismatch.")
 			c.Abort()

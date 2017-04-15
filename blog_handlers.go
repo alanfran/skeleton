@@ -11,8 +11,8 @@ import (
 	"github.com/russross/blackfriday"
 )
 
-func blogHomeH(c *gin.Context) {
-	posts, err := blogPosts.GetRecentPosts(3)
+func (app *App) blogHomeH(c *gin.Context) {
+	posts, err := app.blog.GetRecentPosts(3)
 	if err != nil {
 		fmt.Println(err)
 		c.String(500, "Error retrieving blog posts.")
@@ -27,9 +27,9 @@ func blogHomeH(c *gin.Context) {
 	c.HTML(200, "blog", data)
 }
 
-func getBlogH(c *gin.Context) {
+func (app *App) getBlogH(c *gin.Context) {
 	id, _ := strconv.Atoi(c.Param("id"))
-	b, err := blogPosts.GetPost(id)
+	b, err := app.blog.GetPost(id)
 	if err != nil {
 		c.String(404, "Blog post not found.")
 		return
@@ -37,7 +37,7 @@ func getBlogH(c *gin.Context) {
 	c.JSON(200, b)
 }
 
-func postBlogH(c *gin.Context) {
+func (app *App) postBlogH(c *gin.Context) {
 	ctxUser, _ := c.Get("user")
 	u := ctxUser.(user.User)
 
@@ -50,10 +50,10 @@ func postBlogH(c *gin.Context) {
 	}
 
 	b.Author = u.ID
-	blogPosts.CreatePost(b)
+	app.blog.CreatePost(b)
 }
 
-func putBlogH(c *gin.Context) {
+func (app *App) putBlogH(c *gin.Context) {
 	var b blog.Post
 	err := c.Bind(&b)
 	if err != nil {
@@ -64,16 +64,16 @@ func putBlogH(c *gin.Context) {
 		c.String(500, "No data to insert.")
 		return
 	}
-	err = blogPosts.PutPost(b)
+	err = app.blog.PutPost(b)
 	if err != nil {
 		c.String(500, err.Error())
 	}
 
 }
 
-func deleteBlogH(c *gin.Context) {
+func (app *App) deleteBlogH(c *gin.Context) {
 	id, _ := strconv.Atoi(c.Param("id"))
-	err := blogPosts.DelPost(id)
+	err := app.blog.DelPost(id)
 	if err != nil {
 		c.String(500, "Error deleting post."+err.Error())
 		fmt.Println(err.Error())

@@ -6,23 +6,14 @@ import (
 	pg "gopkg.in/pg.v4"
 
 	"./auth"
-	blogmodule "./blog"
+	"./blog"
 	"./user"
+	"github.com/gin-gonic/contrib/sessions"
 	"github.com/gin-gonic/gin"
-	"github.com/gorilla/sessions"
 )
 
-// App stores the components and configuration of the application.
-type App struct {
-	db *pg.DB
-
-	blog   blogmodule.Storer
-	users  user.Storer
-	auth   auth.Storer
-	mailer Mailer
-
-	cookieStore sessions.CookieStore
-
+// Config stores our application's settings.
+type Config struct {
 	sessionCookieName string
 	cookieSecret      string
 	csrfSecret        string
@@ -36,106 +27,91 @@ type App struct {
 	appURL  string
 }
 
-func getSessionCookieName() string {
-	name := os.Getenv("SESSION_COOKIE_NAME")
-	if name == "" {
-		if gin.Mode() == gin.ReleaseMode {
-			panic("Please set the SESSION_COOKIE_NAME environment variable.")
+// App stores the components and configuration of the application.
+type App struct {
+	Config
+
+	db *pg.DB
+
+	blog   blog.Storer
+	users  user.Storer
+	auths  auth.Storer
+	mailer Mailer
+
+	cookieStore sessions.CookieStore
+}
+
+// Option facilitates the functional option paradigm. Pass in any number of functions that modify the fields of the *App parameter.
+type Option func(*App)
+
+// NewApp initializes the application object. Configuration loads defaults which can be overriden by environment variables which can be overriden by functional options.
+func NewApp(options ...Option) *App {
+	app := &App{
+	//db:          db,
+	//	blog:        b,
+	//users:       u,
+	//	auths:       a,
+	//cookieStore: c,
+	}
+
+	defaults := map[string]string{
+		"SESSION_COOKIE_NAME": "skeleton",
+		"COOKIE_SECRET":       "testing cookie secret",
+		"CSRF_SECRET":         "testing csrf secret",
+		"DB_ADDR":             "localhost:5432",
+		"DB_USER":             "postgres",
+		"DB_PASSWORD":         "postgres",
+		"DB_DATABASE":         "postgres",
+		"APP_NAME":            "skeleton",
+		"APP_URL":             "localhost:8080",
+	}
+
+	// if testing, set test db
+	if gin.Mode() == gin.TestMode {
+		defaults["DB_DATABASE"] = "test"
+	}
+
+	// load any environment variables into defaults
+	for k := range defaults {
+		env := os.Getenv(k)
+		if env != "" {
+			defaults[k] = env
 		}
-		name = "skeleton"
 	}
-	return name
-}
 
-func getCookieSecret() string {
-	secret := os.Getenv("COOKIE_SECRET")
-	if secret == "" {
-		if gin.Mode() == gin.ReleaseMode {
-			panic("Please set the COOKIE_SECRET environment variable.")
-		}
-		secret = "change this secret used to authenticate cookies"
-	}
-	return secret
-}
+	app.sessionCookieName = defaults["SESSION_COOKIE_NAME"]
+	app.cookieSecret = defaults["COOKIE_SECRET"]
+	app.csrfSecret = defaults["CSRF_SECRET"]
+	app.dbAddr = defaults["DB_ADDR"]
+	app.dbUser = defaults["DB_USER"]
+	app.dbPassword = defaults["DB_PASSWORD"]
+	app.dbDatabase = defaults["DB_DATABASE"]
+	app.appName = defaults["APP_NAME"]
+	app.appURL = defaults["APP_URL"]
 
-func getCsrfSecret() string {
-	secret := os.Getenv("CSRF_SECRET")
-	if secret == "" {
-		if gin.Mode() == gin.ReleaseMode {
-			panic("Please set the CSRF_SECRET environment variable.")
-		}
-		secret = "change this csrf secret"
+	// apply functional options
+	for _, v := range options {
+		v(app)
 	}
-	return secret
-}
 
-func getDbAddr() string {
-	addr := os.Getenv("DB_ADDR")
-	if addr == "" {
-		addr = "localhost:5432"
-	}
-	return addr
-}
+	app.db = app.initDatabase()
 
-func getDbUser() string {
-	user := os.Getenv("DB_USER")
-	if user == "" {
-		if gin.Mode() == gin.ReleaseMode {
-			panic("Please set the DB_USER environment variable.")
-		}
-		user = "postgres"
-	}
-	return user
-}
-
-func getDbPass() string {
-	pass := os.Getenv("DB_PASSWORD")
-	if pass == "" {
-		if gin.Mode() == gin.ReleaseMode {
-			panic("Please set the DB_PASSWORD environment variable.")
-		}
-		pass = "postgres"
-	}
-	return pass
-}
-
-func getDbDatabase() string {
-	dbname := os.Getenv("DB_DATABASE")
-	if dbname == "" {
-		if gin.Mode() == gin.ReleaseMode {
-			panic("Please set the DB_DATABASE environment variable.")
-		}
-		dbname = "postgres"
-	}
-	return dbname
-}
-
-func getDbTestDatabase() string {
-	tdb := os.Getenv("DB_TEST_DATABASE")
-	if tdb == "" {
-		tdb = "test"
-	}
-	return tdb
-}
-
-func getAppName() string {
-	app := os.Getenv("APP_NAME")
-	if app == "" {
-		if gin.Mode() == gin.ReleaseMode {
-			panic("Please set the APP_NAME environment variable.")
-		}
-		app = "skeleton"
-	}
 	return app
 }
 
-func getAppURL() string {
-	url := os.Getenv("APP_URL")
-	if url == "" {
-		if gin.Mode() == gin.ReleaseMode {
-			panic("Please set the APP_URL environment variable.")
-		}
-		url = "localhost:8080"
+func (a *App) initDatabase() *pg.DB {
+	// connect to DB
+	db := pg.Connect(&pg.Options{
+		Addr:     a.dbAddr,
+		User:     a.dbUser,
+		Password: a.dbPassword,
+		Database: a.dbDatabase,
+	})
+	// verify connection
+	_, err := db.Exec(`SELECT 1`)
+	if err != nil {
+		panic("Error connecting to the database.")
 	}
-	return url
+
+	return db
 }

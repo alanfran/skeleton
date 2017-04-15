@@ -6,12 +6,12 @@ import (
 	"./user"
 )
 
-func registerH(c *gin.Context) {
+func (app *App) registerH(c *gin.Context) {
 	// get POST data
 	var u user.User
 	c.Bind(&u)
 
-	u, err := users.Create(u)
+	u, err := app.users.Create(u)
 	if err != nil {
 		c.String(500, err.Error())
 		return
@@ -20,12 +20,12 @@ func registerH(c *gin.Context) {
 	c.String(200, "User "+u.Name+" registered.")
 }
 
-func confirmH(c *gin.Context) {
+func (app *App) confirmH(c *gin.Context) {
 	// take confirmation key
 	var ct user.ConfirmToken
 	c.Bind(&ct)
 
-	err := users.ConfirmUser(ct.Token)
+	err := app.users.ConfirmUser(ct.Token)
 	if err != nil {
 		c.String(500, err.Error())
 		return
@@ -34,7 +34,7 @@ func confirmH(c *gin.Context) {
 	c.Redirect(303, "/")
 }
 
-func recoverH(c *gin.Context) {
+func (app *App) recoverH(c *gin.Context) {
 	var rt user.RecoverToken
 	c.Bind(&rt)
 
@@ -43,7 +43,7 @@ func recoverH(c *gin.Context) {
 		return
 	}
 
-	_, err := users.RecoverUser(rt.Token)
+	_, err := app.users.RecoverUser(rt.Token)
 	if err != nil {
 		c.String(400, err.Error())
 		return

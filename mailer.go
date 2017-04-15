@@ -10,12 +10,13 @@ type Mailer interface {
 
 // MockMailer outputs mails to stdout.
 type MockMailer struct {
+	app *App
 }
 
 // NewMockMailer returns an initialized Mailer.
-func NewMockMailer() *MockMailer {
+func NewMockMailer(a *App) *MockMailer {
 
-	return &MockMailer{}
+	return &MockMailer{app: a}
 }
 
 // Send sends an email to `addr`.
@@ -28,8 +29,8 @@ func (m MockMailer) Send(addr, subj, body string) error {
 func (m MockMailer) SendConfirmation(addr, token string) error {
 	m.Send(
 		addr,
-		"Welcome to "+appName+".",
-		"Please activate your account.\nhttps://"+appURL+"/api/confirm?Token="+token,
+		"Welcome to "+m.app.appName+".",
+		"Please activate your account.\nhttps://"+m.app.appURL+"/api/confirm?Token="+token,
 	)
 
 	return nil
