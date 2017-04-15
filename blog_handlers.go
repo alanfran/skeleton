@@ -5,8 +5,8 @@ import (
 	"html/template"
 	"strconv"
 
-	"./blog"
-	"./user"
+	"github.com/alanfran/skeleton/blog"
+	"github.com/alanfran/skeleton/user"
 	"github.com/gin-gonic/gin"
 	"github.com/russross/blackfriday"
 )

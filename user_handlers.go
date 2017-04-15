@@ -3,7 +3,7 @@ package main
 import (
 	"github.com/gin-gonic/gin"
 
-	"./user"
+	"github.com/alanfran/skeleton/user"
 )
 
 func (app *App) registerH(c *gin.Context) {

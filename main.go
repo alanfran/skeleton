@@ -3,9 +3,9 @@ package main
 import (
 	"github.com/gin-gonic/contrib/sessions"
 
-	"./auth"
-	"./blog"
-	"./user"
+	"github.com/alanfran/skeleton/auth"
+	"github.com/alanfran/skeleton/blog"
+	"github.com/alanfran/skeleton/user"
 )
 
 func main() {

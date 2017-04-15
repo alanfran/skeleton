@@ -1,7 +1,7 @@
 package main
 
 import (
-	"./user"
+	"github.com/alanfran/skeleton/user"
 	"github.com/gin-gonic/contrib/sessions"
 	"github.com/gin-gonic/gin"
 )

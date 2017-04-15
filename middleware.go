@@ -3,7 +3,7 @@ package main
 import (
 	"errors"
 
-	"./user"
+	"github.com/alanfran/skeleton/user"
 
 	"github.com/gin-gonic/contrib/secure"
 	"github.com/gin-gonic/contrib/sessions"

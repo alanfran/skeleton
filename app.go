@@ -5,9 +5,9 @@ import (
 
 	pg "gopkg.in/pg.v4"
 
-	"./auth"
-	"./blog"
-	"./user"
+	"github.com/alanfran/skeleton/auth"
+	"github.com/alanfran/skeleton/blog"
+	"github.com/alanfran/skeleton/user"
 	"github.com/gin-gonic/contrib/sessions"
 	"github.com/gin-gonic/gin"
 )
@@ -46,13 +46,7 @@ type Option func(*App)
 
 // NewApp initializes the application object. Configuration loads defaults which can be overriden by environment variables which can be overriden by functional options.
 func NewApp(options ...Option) *App {
-	app := &App{
-	//db:          db,
-	//	blog:        b,
-	//users:       u,
-	//	auths:       a,
-	//cookieStore: c,
-	}
+	app := &App{}
 
 	defaults := map[string]string{
 		"SESSION_COOKIE_NAME": "skeleton",
