@@ -3,8 +3,38 @@ package main
 import (
 	"os"
 
+	pg "gopkg.in/pg.v4"
+
+	"./auth"
+	blogmodule "./blog"
+	"./user"
 	"github.com/gin-gonic/gin"
+	"github.com/gorilla/sessions"
 )
+
+// App stores the components and configuration of the application.
+type App struct {
+	db *pg.DB
+
+	blog   blogmodule.Storer
+	users  user.Storer
+	auth   auth.Storer
+	mailer Mailer
+
+	cookieStore sessions.CookieStore
+
+	sessionCookieName string
+	cookieSecret      string
+	csrfSecret        string
+
+	dbAddr     string
+	dbUser     string
+	dbPassword string
+	dbDatabase string
+
+	appName string
+	appURL  string
+}
 
 func getSessionCookieName() string {
 	name := os.Getenv("SESSION_COOKIE_NAME")

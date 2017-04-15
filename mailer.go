@@ -3,23 +3,29 @@ package main
 import "fmt"
 
 // Mailer sends emails.
-type Mailer struct {
+type Mailer interface {
+	Send(address, subject, body string) error
+	SendConfirmation(address, token string) error
 }
 
-// NewMailer returns an initialized Mailer.
-func NewMailer() *Mailer {
+// MockMailer outputs mails to stdout.
+type MockMailer struct {
+}
 
-	return &Mailer{}
+// NewMockMailer returns an initialized Mailer.
+func NewMockMailer() *MockMailer {
+
+	return &MockMailer{}
 }
 
 // Send sends an email to `addr`.
-func (m Mailer) Send(addr, subj, body string) error {
+func (m MockMailer) Send(addr, subj, body string) error {
 	fmt.Println("[" + addr + "]  " + subj + ": " + body)
-	return errNyi
+	return nil
 }
 
 // SendConfirmation sends a confirmation email.
-func (m Mailer) SendConfirmation(addr, token string) error {
+func (m MockMailer) SendConfirmation(addr, token string) error {
 	m.Send(
 		addr,
 		"Welcome to "+appName+".",

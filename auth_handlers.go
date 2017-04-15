@@ -1,6 +1,7 @@
 package main
 
 import (
+	"./user"
 	"github.com/gin-gonic/contrib/sessions"
 	"github.com/gin-gonic/gin"
 )
@@ -11,7 +12,7 @@ var (
 )
 
 func loginH(c *gin.Context) {
-	var u User
+	var u user.User
 	c.Bind(&u)
 
 	u, err := users.Validate(u.Name, u.Password)
@@ -21,7 +22,7 @@ func loginH(c *gin.Context) {
 	}
 
 	// create auth token in database
-	a, err := auth.Create(u.ID, c.ClientIP())
+	a, err := auths.Create(u.ID, c.ClientIP())
 	if err != nil {
 		c.String(500, "Error creating session.")
 		return
@@ -45,7 +46,7 @@ func logoutH(c *gin.Context) {
 	}
 
 	// delete auth from database
-	err := auth.Del(key.(string))
+	err := auths.Del(key.(string))
 	if err != nil {
 		c.String(500, err.Error())
 	}

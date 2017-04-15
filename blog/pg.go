@@ -1,4 +1,4 @@
-package main
+package blog
 
 import (
 	"time"
@@ -6,25 +6,13 @@ import (
 	"gopkg.in/pg.v4"
 )
 
-// BlogPost stores a blog post.
-type BlogPost struct {
-	ID         int
-	Author     int
-	AuthorName string `sql:"-"`
-	Title      string
-	Body       string
-	Date       time.Time
-	DateString string `sql:"-"`
+// PgStore contains a reference to the database and provides CRUD methods.
+type PgStore struct {
+	db *pg.DB
 }
 
-// BlogStore contains a reference to the database and provides CRUD methods.
-type BlogStore struct {
-	db  *pg.DB
-	mem map[int]BlogPost
-}
-
-// NewBlogStore ensures the `blog_posts` table exists in the database and returns an initialized BlogStore.
-func NewBlogStore(db *pg.DB) *BlogStore {
+// NewPgStore ensures the `blog_posts` table exists in the database and returns an initialized PgStore.
+func NewPgStore(db *pg.DB) *PgStore {
 	// Create Table in db
 	_, err := db.Exec(`CREATE TABLE IF NOT EXISTS blog_posts (
 		id SERIAL PRIMARY KEY,
@@ -36,15 +24,14 @@ func NewBlogStore(db *pg.DB) *BlogStore {
 		panic(err)
 	}
 
-	return &BlogStore{
-		db:  db,
-		mem: make(map[int]BlogPost),
+	return &PgStore{
+		db: db,
 	}
 }
 
 // GetPost returns the blog post with the provided ID, or an error.
-func (s BlogStore) GetPost(id int) (BlogPost, error) {
-	var p BlogPost
+func (s PgStore) GetPost(id int) (Post, error) {
+	var p Post
 	p.ID = id
 	p.Date = time.Now()
 
@@ -54,29 +41,23 @@ func (s BlogStore) GetPost(id int) (BlogPost, error) {
 }
 
 // GetRecentPosts returns the last n posts, or an error.
-func (s BlogStore) GetRecentPosts(limit int) ([]BlogPost, error) {
-	var posts []BlogPost
+func (s PgStore) GetRecentPosts(limit int) ([]Post, error) {
+	var posts []Post
 	err := s.db.Model(&posts).Order("id DESC").Limit(limit).Select()
-
-	for k, p := range posts {
-		u, _ := users.Get(p.Author)
-		posts[k].AuthorName = u.Name
-		posts[k].DateString = p.Date.Format("Jan 2, 2006 at 15:04")
-	}
 
 	return posts, err
 }
 
 // GetPostRange returns a slice of `len` posts starting from the ID `begin`, or an error.
-func (s BlogStore) GetPostRange(begin, len int) ([]BlogPost, error) {
-	var posts []BlogPost
+func (s PgStore) GetPostRange(begin, len int) ([]Post, error) {
+	var posts []Post
 	err := s.db.Model(&posts).Where("id <= ?", begin).Order("id DESC").Limit(len).Select()
 
 	return posts, err
 }
 
 // CreatePost inserts the provided post into the database.
-func (s BlogStore) CreatePost(b BlogPost) (BlogPost, error) {
+func (s PgStore) CreatePost(b Post) (Post, error) {
 
 	b.Date = time.Now()
 	err := s.db.Create(&b)
@@ -85,7 +66,7 @@ func (s BlogStore) CreatePost(b BlogPost) (BlogPost, error) {
 }
 
 // PutPost updates the provided post in the database.
-func (s BlogStore) PutPost(updated BlogPost) error {
+func (s PgStore) PutPost(updated Post) error {
 	p, err := s.GetPost(updated.ID)
 	if err != nil {
 		return err
@@ -99,8 +80,8 @@ func (s BlogStore) PutPost(updated BlogPost) error {
 }
 
 // DelPost deletes the post with the provided ID.
-func (s BlogStore) DelPost(id int) error {
-	err := s.db.Delete(&BlogPost{ID: id})
+func (s PgStore) DelPost(id int) error {
+	err := s.db.Delete(&Post{ID: id})
 
 	return err
 }

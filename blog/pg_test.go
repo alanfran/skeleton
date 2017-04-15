@@ -1,4 +1,4 @@
-package main
+package blog
 
 import (
 	"strconv"
@@ -7,22 +7,30 @@ import (
 	"gopkg.in/pg.v4"
 )
 
+var (
+	db   *pg.DB
+	blog Storer
+
+	dbAddr     = "localhost:5432"
+	dbUser     = "postgres"
+	dbPassword = "postgres"
+	dbDatabase = "test"
+)
+
 func init() {
-	if db == nil {
-		db = pg.Connect(&pg.Options{
-			Addr:     dbAddr,
-			User:     dbUser,
-			Password: dbPassword,
-			Database: dbTestDatabase,
-		})
-		// verify connection
-		_, err := db.Exec(`SELECT 1`)
-		if err != nil {
-			panic("Error connecting to the database.")
-		}
+	db = pg.Connect(&pg.Options{
+		Addr:     dbAddr,
+		User:     dbUser,
+		Password: dbPassword,
+		Database: dbDatabase,
+	})
+	// verify connection
+	_, err := db.Exec(`SELECT 1`)
+	if err != nil {
+		panic("Error connecting to the database.")
 	}
 
-	blog = NewBlogStore(db)
+	blog = NewPgStore(db)
 }
 
 func TestBlogCRUD(t *testing.T) {
@@ -30,7 +38,7 @@ func TestBlogCRUD(t *testing.T) {
 	oBody := "Test Body. Lorem ipsum etc."
 
 	// create
-	p, err := blog.CreatePost(BlogPost{
+	p, err := blog.CreatePost(Post{
 		Author: 123,
 		Title:  oTitle,
 		Body:   oBody})
@@ -68,28 +76,28 @@ func TestBlogCRUD(t *testing.T) {
 }
 
 func TestGetPostRange(t *testing.T) {
-	posts := []BlogPost{
-		BlogPost{
+	posts := []Post{
+		Post{
 			Author: 1,
 			Title:  "Title 1",
 			Body:   "Body 1",
 		},
-		BlogPost{
+		Post{
 			Author: 2,
 			Title:  "Title 2",
 			Body:   "Body 2",
 		},
-		BlogPost{
+		Post{
 			Author: 3,
 			Title:  "Title 3",
 			Body:   "Body 3",
 		},
-		BlogPost{
+		Post{
 			Author: 4,
 			Title:  "Title 4",
 			Body:   "Body 4",
 		},
-		BlogPost{
+		Post{
 			Author: 5,
 			Title:  "Title 5",
 			Body:   "Body 5",

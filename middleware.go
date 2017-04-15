@@ -3,6 +3,8 @@ package main
 import (
 	"errors"
 
+	"./user"
+
 	"github.com/gin-gonic/contrib/secure"
 	"github.com/gin-gonic/contrib/sessions"
 	"github.com/gin-gonic/gin"
@@ -35,7 +37,7 @@ func setAuth(c *gin.Context) {
 	}
 	key := k.(string)
 	// look up session in db
-	a, err := auth.Get(key)
+	a, err := auths.Get(key)
 	if err != nil {
 		c.Next()
 		return
@@ -86,7 +88,7 @@ func isAdmin(c *gin.Context) bool {
 		return false
 	}
 
-	usr := u.(User)
+	usr := u.(user.User)
 	if !usr.Admin {
 		return false
 	}

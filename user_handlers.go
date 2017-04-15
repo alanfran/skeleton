@@ -2,11 +2,13 @@ package main
 
 import (
 	"github.com/gin-gonic/gin"
+
+	"./user"
 )
 
 func registerH(c *gin.Context) {
 	// get POST data
-	var u User
+	var u user.User
 	c.Bind(&u)
 
 	u, err := users.Create(u)
@@ -20,7 +22,7 @@ func registerH(c *gin.Context) {
 
 func confirmH(c *gin.Context) {
 	// take confirmation key
-	var ct ConfirmToken
+	var ct user.ConfirmToken
 	c.Bind(&ct)
 
 	err := users.ConfirmUser(ct.Token)
@@ -33,7 +35,7 @@ func confirmH(c *gin.Context) {
 }
 
 func recoverH(c *gin.Context) {
-	var rt RecoverToken
+	var rt user.RecoverToken
 	c.Bind(&rt)
 
 	if rt.Token == "" {

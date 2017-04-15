@@ -1,16 +1,12 @@
-package main
+package user
 
 import (
-	"crypto/rand"
-	"encoding/base64"
 	"errors"
 	"strings"
 	"time"
 
 	"golang.org/x/crypto/bcrypt"
 	"gopkg.in/pg.v4"
-	//"fmt"
-	//"strconv"
 )
 
 var (
@@ -18,46 +14,14 @@ var (
 	errNyi     = errors.New("Not yet implemented.")
 )
 
-// User stores user accont information.
-type User struct {
-	ID       int
-	Name     string
-	Email    string
-	Password string
-
-	Admin bool
-
-	Created   time.Time
-	Confirmed bool
-
-	// login lock
-	AttemptNumber int64
-	AttemptTime   time.Time `sql:",null"`
-	Locked        time.Time `sql:",null"`
+// PgStore stores a reference to the database and the Mailer and provides user CRUD methods.
+type PgStore struct {
+	db *pg.DB
 }
 
-// ConfirmToken stores user email confirmation tokens.
-type ConfirmToken struct {
-	UserID int ``
-	Token  string
-}
-
-// RecoverToken stores user account recovery tokens.
-type RecoverToken struct {
-	UserID  int
-	Token   string
-	Expires time.Time
-}
-
-// UserStore stores a reference to the database and the Mailer and provides user CRUD methods.
-type UserStore struct {
-	db     *pg.DB
-	mailer *Mailer
-}
-
-// NewUserStore ensures the users, confirm_tokens, and recover_tokens tables exist.
-// Then it returns an initialized UserStore.
-func NewUserStore(database *pg.DB, mailer *Mailer) *UserStore {
+// NewPgStore ensures the users, confirm_tokens, and recover_tokens tables exist.
+// Then it returns an initialized PgStore.
+func NewPgStore(database *pg.DB) *PgStore {
 	// initialize database
 	_, err := database.Exec(`CREATE TABLE IF NOT EXISTS users (
     id               serial PRIMARY KEY,
@@ -90,11 +54,11 @@ func NewUserStore(database *pg.DB, mailer *Mailer) *UserStore {
 	}
 
 	// initialize the memory store
-	return &UserStore{database, mailer}
+	return &PgStore{db: database}
 }
 
 // Create inserts the provided User into the database.
-func (s UserStore) Create(u User) (User, error) {
+func (s PgStore) Create(u User) (User, error) {
 	// name unique
 	_, err := s.GetByName(u.Name)
 	if err == nil { // successful query, err != ErrNoRows
@@ -130,33 +94,18 @@ func (s UserStore) Create(u User) (User, error) {
 		return u, err
 	}
 
-	// generate confirmation token
-	confirm := ConfirmToken{UserID: u.ID}
-	confirm.Token, err = GenerateRandomToken()
-	if err != nil {
-		s.db.Delete(&u)
-		return u, errors.New("Error generating confirmation token.")
-	}
-	err = s.db.Create(&confirm)
-	if err != nil {
-		s.db.Delete(&u)
-		return u, err
-	}
-
-	// email
-	s.mailer.SendConfirmation(u.Email, confirm.Token)
 	return u, err
 }
 
 // Put updates the provided user in the database.
-func (s UserStore) Put(u User) error {
+func (s PgStore) Put(u User) error {
 	err := s.db.Update(&u)
 
 	return err
 }
 
 // Get returns the user with the provided ID, or an error.
-func (s UserStore) Get(id int) (u User, err error) {
+func (s PgStore) Get(id int) (u User, err error) {
 	u.ID = id
 	err = s.db.Select(&u)
 
@@ -164,14 +113,14 @@ func (s UserStore) Get(id int) (u User, err error) {
 }
 
 // GetByName returns the User with the provided name/email, or an error.
-func (s UserStore) GetByName(n string) (u User, err error) {
+func (s PgStore) GetByName(n string) (u User, err error) {
 	err = s.db.Model(&u).Where("name = ? OR email = ?", n, n).Select()
 
 	return u, err
 }
 
 // Del deletes the user with the provided ID from the database, or returns an error.
-func (s UserStore) Del(id int) error {
+func (s PgStore) Del(id int) error {
 	var u User
 	u.ID = id
 	err := s.db.Delete(&u)
@@ -185,7 +134,7 @@ func (s UserStore) Del(id int) error {
 }
 
 // Validate checks if the provided name/email and password are correct.
-func (s UserStore) Validate(name, pass string) (User, error) {
+func (s PgStore) Validate(name, pass string) (User, error) {
 	u, err := s.GetByName(name)
 	if err != nil {
 		return u, err
@@ -199,8 +148,23 @@ func (s UserStore) Validate(name, pass string) (User, error) {
 	return u, err
 }
 
+// CreateConfirmationToken creates a confirmation token for a user and sets their account as unconfirmed.
+func (s PgStore) CreateConfirmationToken(userid int) (ConfirmToken, error) {
+	// generate confirmation token
+	var confirm ConfirmToken
+	t, err := GenerateRandomToken()
+	if err != nil {
+		return confirm, errors.New("Error generating confirmation token.")
+	}
+	confirm.UserID = userid
+	confirm.Token = t
+	err = s.db.Create(&confirm)
+
+	return confirm, err
+}
+
 // ConfirmUser consumes the provided token and confirms the matching user, or returns an error.
-func (s UserStore) ConfirmUser(token string) error {
+func (s PgStore) ConfirmUser(token string) error {
 	// get user by ConfirmToken
 	var ct ConfirmToken
 	var u User
@@ -229,7 +193,7 @@ func (s UserStore) ConfirmUser(token string) error {
 }
 
 // NewRecover generates a new recovery token and inserts it into the database, or returns an error.
-func (s UserStore) NewRecover(uid int) (RecoverToken, error) {
+func (s PgStore) NewRecover(uid int) (RecoverToken, error) {
 	var rt RecoverToken
 
 	token, err := GenerateRandomToken()
@@ -244,18 +208,11 @@ func (s UserStore) NewRecover(uid int) (RecoverToken, error) {
 		return rt, errors.New("Error creating recovery token.")
 	}
 
-	u, err := s.Get(uid)
-	if err != nil {
-		return rt, errors.New("Error retrieving email address.")
-	}
-
-	s.mailer.Send(u.Email, "Password Recovery", rt.Token)
-
 	return rt, err
 }
 
 // RecoverUser consumes the provided recovery token.
-func (s UserStore) RecoverUser(token string) (User, error) {
+func (s PgStore) RecoverUser(token string) (User, error) {
 	var u User
 	var rt RecoverToken
 
@@ -281,15 +238,4 @@ func (s UserStore) RecoverUser(token string) (User, error) {
 	}
 
 	return u, err
-}
-
-// GenerateRandomToken generates a base64-encoded 256-bit key used to
-// confirm a user's email address, or to reset their password.
-func GenerateRandomToken() (string, error) {
-	b := make([]byte, 32)
-	_, err := rand.Read(b)
-	if err != nil {
-		return "", err
-	}
-	return base64.URLEncoding.EncodeToString(b), err
 }

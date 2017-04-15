@@ -3,16 +3,19 @@ package main
 import (
 	"github.com/gin-gonic/contrib/sessions"
 
+	"./auth"
+	"./blog"
+	"./user"
 	"gopkg.in/pg.v4"
 )
 
 var (
 	db *pg.DB
 
-	blog   *BlogStore
-	users  *UserStore
-	auth   *AuthStore
-	mailer *Mailer
+	blogPosts blog.Storer
+	users     user.Storer
+	auths     auth.Storer
+	mailer    Mailer
 
 	cookieStore sessions.CookieStore
 
@@ -45,10 +48,10 @@ func main() {
 	}
 
 	// init data stores
-	mailer = NewMailer()
-	users = NewUserStore(db, mailer)
-	auth = NewAuthStore(db)
-	blog = NewBlogStore(db)
+	mailer = NewMockMailer()
+	users = user.NewPgStore(db)
+	auths = auth.NewPgStore(db)
+	blogPosts = blog.NewPgStore(db)
 
 	cookieStore = sessions.NewCookieStore([]byte(cookieSecret))
 

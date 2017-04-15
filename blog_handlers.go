@@ -5,12 +5,14 @@ import (
 	"html/template"
 	"strconv"
 
+	"./blog"
+	"./user"
 	"github.com/gin-gonic/gin"
 	"github.com/russross/blackfriday"
 )
 
 func blogHomeH(c *gin.Context) {
-	posts, err := blog.GetRecentPosts(3)
+	posts, err := blogPosts.GetRecentPosts(3)
 	if err != nil {
 		fmt.Println(err)
 		c.String(500, "Error retrieving blog posts.")
@@ -27,7 +29,7 @@ func blogHomeH(c *gin.Context) {
 
 func getBlogH(c *gin.Context) {
 	id, _ := strconv.Atoi(c.Param("id"))
-	b, err := blog.GetPost(id)
+	b, err := blogPosts.GetPost(id)
 	if err != nil {
 		c.String(404, "Blog post not found.")
 		return
@@ -36,10 +38,10 @@ func getBlogH(c *gin.Context) {
 }
 
 func postBlogH(c *gin.Context) {
-	user, _ := c.Get("user")
-	u := user.(User)
+	ctxUser, _ := c.Get("user")
+	u := ctxUser.(user.User)
 
-	var b BlogPost
+	var b blog.Post
 	err := c.Bind(&b)
 
 	if err != nil {
@@ -48,11 +50,11 @@ func postBlogH(c *gin.Context) {
 	}
 
 	b.Author = u.ID
-	blog.CreatePost(b)
+	blogPosts.CreatePost(b)
 }
 
 func putBlogH(c *gin.Context) {
-	var b BlogPost
+	var b blog.Post
 	err := c.Bind(&b)
 	if err != nil {
 		c.String(500, err.Error())
@@ -62,7 +64,7 @@ func putBlogH(c *gin.Context) {
 		c.String(500, "No data to insert.")
 		return
 	}
-	err = blog.PutPost(b)
+	err = blogPosts.PutPost(b)
 	if err != nil {
 		c.String(500, err.Error())
 	}
@@ -71,7 +73,7 @@ func putBlogH(c *gin.Context) {
 
 func deleteBlogH(c *gin.Context) {
 	id, _ := strconv.Atoi(c.Param("id"))
-	err := blog.DelPost(id)
+	err := blogPosts.DelPost(id)
 	if err != nil {
 		c.String(500, "Error deleting post."+err.Error())
 		fmt.Println(err.Error())

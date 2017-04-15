@@ -1,28 +1,42 @@
-package main
+package user
 
 import (
 	"testing"
-	//"fmt"
-	//"strconv"
+
 	"gopkg.in/pg.v4"
 )
 
+var (
+	db    *pg.DB
+	users Storer
+
+	dbAddr     = "localhost:5432"
+	dbUser     = "postgres"
+	dbPassword = "postgres"
+	dbDatabase = "test"
+)
+
 func init() {
-	if db == nil {
-		db = pg.Connect(&pg.Options{
-			Addr:     dbAddr,
-			User:     dbUser,
-			Password: dbPassword,
-			Database: dbTestDatabase,
-		})
-		// verify connection
-		_, err := db.Exec(`SELECT 1`)
-		if err != nil {
-			panic("Error connecting to the database.")
-		}
+	db = pg.Connect(&pg.Options{
+		Addr:     dbAddr,
+		User:     dbUser,
+		Password: dbPassword,
+		Database: dbDatabase,
+	})
+	// verify connection
+	_, err := db.Exec(`SELECT 1`)
+	if err != nil {
+		panic("Error connecting to the database.")
 	}
 
-	users = NewUserStore(db, NewMailer())
+	/*_, err = db.Exec(`DROP TABLE confirm_tokens;
+		DROP TABLE recover_tokens;
+		DROP TABLE users;`)
+	if err != nil {
+		panic(err)
+	}*/
+
+	users = NewPgStore(db)
 }
 
 func TestCreateAndConfirmUser(t *testing.T) {
@@ -35,6 +49,8 @@ func TestCreateAndConfirmUser(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
+
+	users.CreateConfirmationToken(u.ID)
 
 	// test confirmation
 	var ct ConfirmToken
@@ -68,7 +84,6 @@ func TestValidateUser(t *testing.T) {
 		t.Error(err)
 	}
 	defer users.Del(u.ID)
-	defer db.Model(&ConfirmToken{}).Where("user_id = ?", u.ID).Delete()
 
 	_, err = users.Validate(u.Name, p)
 	if err != nil {
@@ -102,17 +117,6 @@ func TestRecoverUser(t *testing.T) {
 		t.Error(err)
 		return
 	}
-
-	// make sure the token has been consumed
-	var ct2 RecoverToken
-	err = users.db.Model(&ct2).Where("token = ?", rt.Token).Select()
-	if err == nil {
-		t.Error("The recovery token has not been deleted after use.")
-		t.Error(err)
-	}
-
-	var confirm ConfirmToken
-	_, _ = users.db.Model(&confirm).Where("user_id = ?", u2.ID).Delete()
 
 	// delete user
 	err = users.Del(u2.ID)
