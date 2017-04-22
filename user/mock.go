@@ -10,8 +10,8 @@ import (
 
 // MockStore implements an in-memory User storer for testing purposes.
 type MockStore struct {
-	id map[int]User
-	name map[string]User
+	id    map[int]User
+	name  map[string]User
 	email map[string]User
 
 	confirm map[string]ConfirmToken
@@ -23,9 +23,11 @@ type MockStore struct {
 // NewMockStore returns an initialized MockStore.
 func NewMockStore() *MockStore {
 	return &MockStore{
-		id: map[int]User{},
-		name: map[string]User{},
-		email: map[string]User{},
+		id:      map[int]User{},
+		name:    map[string]User{},
+		email:   map[string]User{},
+		confirm: map[string]ConfirmToken{},
+		recover: map[string]RecoverToken{},
 	}
 }
 

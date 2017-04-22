@@ -1,13 +1,13 @@
 package blog
 
 import (
-	"time"
 	"errors"
+	"time"
 )
 
 // MockStore stores Posts in memory and provides CRUD methods.
 type MockStore struct {
-	mem map[int]Post
+	mem    map[int]Post
 	serial int
 }
 
@@ -29,16 +29,28 @@ func (s *MockStore) GetPost(id int) (p Post, err error) {
 
 // GetRecentPosts returns the last n posts, or an error.
 func (s *MockStore) GetRecentPosts(limit int) (ps []Post, err error) {
-	for i := s.serial - 1; i > s.serial - limit - 1; i-- {
-		ps = append(ps, s.mem[i])
+	for i := s.serial - 1; i > 0; i-- {
+		if len(ps) == limit {
+			break
+		}
+		p, ok := s.mem[i]
+		if ok {
+			ps = append(ps, p)
+		}
 	}
 	return ps, err
 }
 
 // GetPostRange returns a slice of `len` posts starting from the ID `begin`, or an error.
-func (s *MockStore) GetPostRange(begin, len int) (ps []Post, err error) {
-	for i := begin; i > begin - len; i-- {
-		ps = append(ps, s.mem[i])
+func (s *MockStore) GetPostRange(begin, length int) (ps []Post, err error) {
+	for i := begin; i > 0; i-- {
+		if len(ps) == length {
+			break
+		}
+		p, ok := s.mem[i]
+		if ok {
+			ps = append(ps, p)
+		}
 	}
 	return ps, err
 }

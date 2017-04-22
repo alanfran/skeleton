@@ -10,6 +10,11 @@ type MockStore struct {
 	mem map[string]Auth
 }
 
+// NewMockStore returns an initialized memory store for use in tests.
+func NewMockStore() *MockStore {
+	return &MockStore{mem: map[string]Auth{}}
+}
+
 // Create places an Auth record in the MockStore.
 func (s MockStore) Create(userid int, ip string) (Auth, error) {
 	var a Auth

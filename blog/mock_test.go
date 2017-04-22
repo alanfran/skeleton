@@ -1,44 +1,25 @@
 package blog
 
 import (
+	"fmt"
 	"strconv"
 	"testing"
-
-	"gopkg.in/pg.v4"
 )
 
 var (
-	db   *pg.DB
-	blog Storer
-
-	dbAddr     = "localhost:5432"
-	dbUser     = "postgres"
-	dbPassword = "postgres"
-	dbDatabase = "test"
+	mock Storer
 )
 
 func init() {
-	db = pg.Connect(&pg.Options{
-		Addr:     dbAddr,
-		User:     dbUser,
-		Password: dbPassword,
-		Database: dbDatabase,
-	})
-	// verify connection
-	_, err := db.Exec(`SELECT 1`)
-	if err != nil {
-		panic("Error connecting to the database.")
-	}
-
-	blog = NewPgStore(db)
+	mock = NewMockStore()
 }
 
-func TestPgCRUD(t *testing.T) {
+func TestMockCRUD(t *testing.T) {
 	oTitle := "Test Title"
 	oBody := "Test Body. Lorem ipsum etc."
 
 	// create
-	p, err := blog.CreatePost(Post{
+	p, err := mock.CreatePost(Post{
 		Author: 123,
 		Title:  oTitle,
 		Body:   oBody})
@@ -50,14 +31,14 @@ func TestPgCRUD(t *testing.T) {
 	// update
 	p.Title = "Something different."
 	p.Body = "This should be different"
-	err = blog.PutPost(p)
+	err = mock.PutPost(p)
 	if err != nil {
 		t.Error("Error updating blog post.")
 		t.Error(err)
 	}
 
 	// get
-	p2, err := blog.GetPost(p.ID)
+	p2, err := mock.GetPost(p.ID)
 	if err != nil {
 		t.Error("Error retrieving updated blog post.")
 		t.Error(err)
@@ -67,7 +48,7 @@ func TestPgCRUD(t *testing.T) {
 	}
 
 	// delete
-	err = blog.DelPost(p.ID)
+	err = mock.DelPost(p.ID)
 	if err != nil {
 		t.Error("Error deleting blog post.")
 		t.Error(err)
@@ -75,7 +56,7 @@ func TestPgCRUD(t *testing.T) {
 
 }
 
-func TestPgGetRanges(t *testing.T) {
+func TestMockGetRanges(t *testing.T) {
 	posts := []Post{
 		Post{
 			Author: 1,
@@ -105,8 +86,8 @@ func TestPgGetRanges(t *testing.T) {
 	}
 
 	// create posts
-	for _, p := range posts {
-		_, err := blog.CreatePost(p)
+	for k := range posts {
+		_, err := mock.CreatePost(posts[k])
 		if err != nil {
 			t.Error("Error creating blog post in range.")
 			t.Error(err)
@@ -114,7 +95,7 @@ func TestPgGetRanges(t *testing.T) {
 	}
 
 	// get range
-	postRange, err := blog.GetPostRange(999999, 5)
+	postRange, err := mock.GetPostRange(10, 5)
 	if err != nil {
 		t.Error("Error getting post range.")
 		t.Error(err)
@@ -124,7 +105,7 @@ func TestPgGetRanges(t *testing.T) {
 	}
 
 	// get recent
-	latest, err := blog.GetRecentPosts(3)
+	latest, err := mock.GetRecentPosts(3)
 	if err != nil {
 		t.Error("Error retrieving recent posts.")
 		t.Error(err)
@@ -134,10 +115,10 @@ func TestPgGetRanges(t *testing.T) {
 	}
 
 	// delete
-	for _, p := range postRange {
-		err = blog.DelPost(p.ID)
+	for k := range postRange {
+		err = mock.DelPost(postRange[k].ID)
 		if err != nil {
-			t.Error("Error deleting post.")
+			t.Error("Error deleting post " + fmt.Sprintf("%v", postRange[k].ID))
 			t.Error(err)
 		}
 	}

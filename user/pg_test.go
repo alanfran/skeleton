@@ -50,13 +50,9 @@ func TestCreateAndConfirmUser(t *testing.T) {
 		t.Error(err)
 	}
 
-	users.CreateConfirmationToken(u.ID)
-
-	// test confirmation
-	var ct ConfirmToken
-	err = db.Model(&ct).Where("user_id = ?", u.ID).Select()
+	ct, err := users.CreateConfirmationToken(u.ID)
 	if err != nil {
-		t.Error("Error retrieving confirmation token.")
+		t.Error("Error creating confirmation token.")
 	}
 
 	err = users.ConfirmUser(ct.Token)
