@@ -44,9 +44,12 @@ type Storer interface {
 	GetByName(n string) (u User, err error)
 	Put(u User) error
 	Del(id int) error
+
 	Validate(name, pass string) (User, error)
+
 	CreateConfirmationToken(userid int) (ConfirmToken, error)
 	ConfirmUser(token string) error
+
 	NewRecover(uid int) (RecoverToken, error)
 	RecoverUser(token string) (User, error)
 }

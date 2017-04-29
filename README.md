@@ -11,7 +11,7 @@ Requires a postgres database.
 
 Mailer is stubbed and prints emails to the console. Please extend Mailer with your own email/SMTP code.
 
-Configuration is handled via environment variables in release mode, and with optional default values in debug/test modes:
+Configuration is handled via environment variables in release mode, and with the following default values (DB_DATABASE changes when running tests):
 
 ```
   SESSION_COOKIE_NAME = skeleton
@@ -21,8 +21,7 @@ Configuration is handled via environment variables in release mode, and with opt
   DB_ADDR             = localhost:5432
   DB_USER             = postgres
   DB_PASSWORD         = postgres
-  DB_DATABASE         = postgres
-  DB_TEST_DATABASE    = test
+  DB_DATABASE         = postgres | test
 
   APP_NAME            = skeleton
   APP_URL             = localhost:8080
